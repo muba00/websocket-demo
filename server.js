@@ -1,18 +1,44 @@
 
+const express = require('express')
+const path = require('path')
+const http = require('http')
 const WebSocket = require('ws')
+const PORT = process.env.PORT || 3000
 
-const server = new WebSocket.Server({ port: 8080 })
 
-const broadcast = (server, message) => {
-    server.clients.forEach((client) => {
+
+// Express Server
+const app = express()
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '/index.html'))
+})
+
+app.get('/app.js', (req, res) => {
+    res.sendFile(path.join(__dirname, '/js/app.js'))
+})
+
+const server = http.createServer(app)
+server.listen(PORT, () => console.log(`Listening on ${PORT}`))
+
+
+
+
+
+
+// Websocket Server
+const wss_server = new WebSocket.Server({ server })
+
+const broadcast = (wss_server, message) => {
+    wss_server.clients.forEach((client) => {
         if (client.readyState == WebSocket.OPEN) {
             client.send(String(message))
         }
     })
 }
 
-server.on("connection", socket => {
+wss_server.on("connection", socket => {
     socket.on("message", (message) => {
-        broadcast(server, message)
+        broadcast(wss_server, message)
     })
 })
